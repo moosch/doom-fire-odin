@@ -32,8 +32,7 @@ game := Game{}
 
 colors_len := 36
 
-/* @todo(moosch): Move to using hex values over Vec4. Profile performance of each */
-/* colors : []int = {
+colors : []int = {
     0x070707,
     0x1f0707,
     0x2f0f07,
@@ -70,45 +69,6 @@ colors_len := 36
     0xDFDF9F,
     0xEFEFC7,
     0xFFFFFF,
-} */
-
-colors : [36]Vec4 = {
-    Vec4{7, 7, 7, 255},
-    Vec4{31, 7, 7, 255},
-    Vec4{47, 15, 7, 255},
-    Vec4{71, 15, 7, 255},
-    Vec4{87, 23, 7, 255},
-    Vec4{103, 31, 7, 255},
-    Vec4{119, 31, 7, 255},
-    Vec4{143, 39, 7, 255},
-    Vec4{159, 47, 7, 255},
-    Vec4{175, 63, 7, 255},
-    Vec4{191, 71, 7, 255},
-    Vec4{199, 71, 7, 255},
-    Vec4{223, 79, 7, 255},
-    Vec4{223, 87, 7, 255},
-    Vec4{223, 87, 7, 255},
-    Vec4{215, 95, 7, 255},
-    Vec4{215, 103, 15, 255},
-    Vec4{207, 111, 15, 255},
-    Vec4{207, 119, 15, 255},
-    Vec4{207, 127, 15, 255},
-    Vec4{207, 135, 23, 255},
-    Vec4{199, 135, 23, 255},
-    Vec4{199, 143, 23, 255},
-    Vec4{199, 151, 31, 255},
-    Vec4{191, 159, 31, 255},
-    Vec4{191, 159, 31, 255},
-    Vec4{191, 167, 39, 255},
-    Vec4{191, 167, 39, 255},
-    Vec4{191, 175, 47, 255},
-    Vec4{183, 175, 47, 255},
-    Vec4{183, 183, 47, 255},
-    Vec4{183, 183, 55, 255},
-    Vec4{207, 207, 111, 255},
-    Vec4{223, 223, 159, 255},
-    Vec4{239, 239, 199, 255},
-    Vec4{255, 255, 255, 255},
 }
 
 get_time :: proc() -> f64
@@ -119,6 +79,14 @@ get_time :: proc() -> f64
 get_random_int :: proc() -> int
 {
 	return int(rand.uint32(&int_rand))
+}
+
+hex_to_rgb :: proc(hex : int) -> Vec4
+{
+    r := u8((hex >> 16) & 0xFF)
+    g := u8((hex >> 8) & 0xFF)
+    b := u8(hex & 0xFF)
+    return Vec4{r, g, b, 255}
 }
 
 spread_fire :: proc(from : int)
@@ -149,7 +117,7 @@ draw_fire :: proc()
     for x in 0..<WIN_WIDTH {
         for y in 0..<WIN_HEIGHT {
             pixel := game.canvas[y * WIN_WIDTH + x]
-            color := colors[pixel.color_idx]
+            color := hex_to_rgb(colors[pixel.color_idx])
             SDL.SetRenderDrawColor(game.renderer, color[0], color[1], color[2], color[3])
             SDL.RenderDrawPoint(game.renderer, pixel.point.x, pixel.point.y)
         }
@@ -186,7 +154,6 @@ main :: proc()
 	assert(window != nil, SDL.GetErrorString())
 	defer SDL.DestroyWindow(window)
 
-	// Must not do VSync because we run the tick loop on the same thread as rendering.
 	game.renderer = SDL.CreateRenderer(window, -1, RENDER_FLAGS)
 	assert(game.renderer != nil, SDL.GetErrorString())
 	defer SDL.DestroyRenderer(game.renderer)
@@ -225,7 +192,6 @@ main :: proc()
         SDL.RenderClear(game.renderer)
 
         end = get_time()
-        // fmt.printf("Time: %f\n", end - start) // 0.120
         for end - start < TARGET_DT_S
         {
             end = get_time()
