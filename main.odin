@@ -23,6 +23,7 @@ Pixel :: struct
 
 Game :: struct
 {
+    window         : ^SDL.Window,
     renderer       : ^SDL.Renderer,
     canvas         : [WIN_WIDTH * WIN_HEIGHT]Pixel,
     perf_frequency : f64,
@@ -71,6 +72,33 @@ colors : []int = {
     0xFFFFFF,
 }
 
+init_sdl :: proc()
+{
+    assert(SDL.Init(SDL.INIT_VIDEO) == 0, SDL.GetErrorString())
+
+    game.window = SDL.CreateWindow(
+        "Doom Fire - Odin",
+        SDL.WINDOWPOS_CENTERED,
+        SDL.WINDOWPOS_CENTERED,
+        WIN_WIDTH,
+        WIN_HEIGHT,
+        WIN_FLAGS,
+    )
+    assert(game.window != nil, SDL.GetErrorString())
+
+    game.renderer = SDL.CreateRenderer(game.window, -1, RENDER_FLAGS)
+    assert(game.renderer != nil, SDL.GetErrorString())
+
+    SDL.RenderSetLogicalSize(game.renderer, WIN_WIDTH, WIN_HEIGHT)
+}
+
+cleanup_sdl :: proc()
+{
+    SDL.DestroyRenderer(game.renderer)
+    SDL.DestroyWindow(game.window)
+    SDL.Quit()
+}
+
 get_time :: proc() -> f64
 {
     return f64(SDL.GetPerformanceCounter()) * 1000 / game.perf_frequency
@@ -78,7 +106,7 @@ get_time :: proc() -> f64
 
 get_random_int :: proc() -> int
 {
-	return int(rand.uint32(&int_rand))
+    return int(rand.uint32(&int_rand))
 }
 
 hex_to_rgb :: proc(hex : int) -> Vec4
@@ -138,28 +166,16 @@ init_canvas :: proc()
     }
 }
 
+render :: proc()
+{
+    SDL.RenderPresent(game.renderer)
+    SDL.SetRenderDrawColor(game.renderer, 0, 0, 0, 100)
+    SDL.RenderClear(game.renderer)
+}
+
 main :: proc()
 {
-	assert(SDL.Init(SDL.INIT_VIDEO) == 0, SDL.GetErrorString())
-	defer SDL.Quit()
-
-	window := SDL.CreateWindow(
-		"Doom Fire - Odin",
-		SDL.WINDOWPOS_CENTERED,
-		SDL.WINDOWPOS_CENTERED,
-		WIN_WIDTH,
-		WIN_HEIGHT,
-		WIN_FLAGS,
-	)
-	assert(window != nil, SDL.GetErrorString())
-	defer SDL.DestroyWindow(window)
-
-	game.renderer = SDL.CreateRenderer(window, -1, RENDER_FLAGS)
-	assert(game.renderer != nil, SDL.GetErrorString())
-	defer SDL.DestroyRenderer(game.renderer)
-
-	SDL.RenderSetLogicalSize(game.renderer, WIN_WIDTH, WIN_HEIGHT)
-
+    init_sdl()
     init_canvas()
 
     game.perf_frequency = f64(SDL.GetPerformanceFrequency())
@@ -185,11 +201,7 @@ main :: proc()
 
         animate_fire()
         draw_fire()
-
-        
-        SDL.RenderPresent(game.renderer)
-        SDL.SetRenderDrawColor(game.renderer, 0, 0, 0, 100)
-        SDL.RenderClear(game.renderer)
+        render()
 
         end = get_time()
         for end - start < TARGET_DT_S
@@ -197,5 +209,6 @@ main :: proc()
             end = get_time()
         }
     }
+    cleanup_sdl()
 }
 
