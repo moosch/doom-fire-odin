@@ -10,7 +10,7 @@ Taken from [this post](https://fabiensanglard.net/doom_fire_psx/index.html) as a
 
 ### End result
 
-![Doom Fire Demo](https://github.coom/animation.gif)
+![Doom Fire Demo](https://github.com/moosch/doom-fire-odin/blob/main/animation.gif)
 
 ## Get it running
 
